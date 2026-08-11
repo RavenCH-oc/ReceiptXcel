@@ -33,12 +33,28 @@ public sealed class ReceiptRecordReader
         string workbookPath,
         CancellationToken cancellationToken = default)
     {
-        var worksheet = await ReadWorksheetAsync(workbookPath, cancellationToken);
+        var worksheet = await ReadWorksheetAsync(
+            workbookPath,
+            ReceiptWorksheetSchema.WorksheetName,
+            cancellationToken);
         return worksheet.Rows.Select(ParseRecord).ToArray();
     }
 
     public async Task<ReceiptRecord> ReadRecordAsync(
         string workbookPath,
+        int rowNumber,
+        CancellationToken cancellationToken = default)
+    {
+        return await ReadRecordAsync(
+            workbookPath,
+            ReceiptWorksheetSchema.WorksheetName,
+            rowNumber,
+            cancellationToken);
+    }
+
+    public async Task<ReceiptRecord> ReadRecordAsync(
+        string workbookPath,
+        string worksheetName,
         int rowNumber,
         CancellationToken cancellationToken = default)
     {
@@ -49,7 +65,7 @@ public sealed class ReceiptRecordReader
                 $"Excel 第 {rowNumber} 列不是可產生收據的資料列。");
         }
 
-        var worksheet = await ReadWorksheetAsync(workbookPath, cancellationToken);
+        var worksheet = await ReadWorksheetAsync(workbookPath, worksheetName, cancellationToken);
         var row = worksheet.Rows.FirstOrDefault(item => item.RowNumber == rowNumber);
         if (row is null)
         {
@@ -63,11 +79,12 @@ public sealed class ReceiptRecordReader
 
     private async Task<ExcelWorksheetData> ReadWorksheetAsync(
         string workbookPath,
+        string worksheetName,
         CancellationToken cancellationToken)
     {
         var worksheet = await _excelReader.ReadAsync(
             workbookPath,
-            ReceiptWorksheetSchema.WorksheetName,
+            worksheetName,
             ReceiptWorksheetSchema.HeaderRowNumber,
             cancellationToken);
         _schema.Validate(worksheet);
@@ -96,9 +113,9 @@ public sealed class ReceiptRecordReader
             Month = month,
             Day = day,
             ReceiptSerial = serial,
-            Payer = Optional(row, 5),
+            Payer = Required(row, 5, "繳款人"),
             Amount = _amountParser.Parse(Required(row, 6, "數字金額"), row.RowNumber),
-            Reason = Optional(row, 7),
+            Reason = Required(row, 7, "事由"),
             Handler = Optional(row, 8)
         };
     }

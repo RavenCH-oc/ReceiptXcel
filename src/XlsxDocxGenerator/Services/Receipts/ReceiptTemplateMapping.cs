@@ -34,14 +34,14 @@ public static class ReceiptTemplateMapping
         new("AMOUNT_UPPER", "三聯金額大寫")
     ];
 
-    public static IReadOnlyDictionary<string, string> CreateValues(
+    public static IReadOnlyDictionary<string, string?> CreateValues(
         ReceiptRecord record,
         FormattedReceiptAmount amount)
     {
         ArgumentNullException.ThrowIfNull(record);
         ArgumentNullException.ThrowIfNull(amount);
 
-        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        return new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
         {
             ["ROC_YEAR"] = record.ROCYear.ToString(),
             ["MONTH"] = record.Month.ToString(),
