@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Keep offline validation deterministic; package vulnerability audit is a network concern. -->
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+</Project>
