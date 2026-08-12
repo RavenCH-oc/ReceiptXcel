@@ -23,6 +23,11 @@ public sealed record ReceiptRecord
 
     public required string Reason { get; init; }
 
+    /// <summary>
+    /// Raw Excel column H value retained only for compatibility with the
+    /// fixed A:H register schema. ReceiptXcel v0.x never maps this source-only
+    /// value to Word; the three "經手人" cells are intentionally left blank.
+    /// </summary>
     public required string Handler { get; init; }
 
     public string ReceiptNumber => $"{ROCYear}{ReceiptSerial}";

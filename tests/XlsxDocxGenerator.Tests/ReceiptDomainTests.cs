@@ -189,7 +189,7 @@ public sealed class ReceiptDomainTests
     }
 
     [Fact]
-    public void ReceiptTemplateMappingMapsHandlerToTheThreeJunctions()
+    public void ReceiptTemplateMappingKeepsHandlerBlankRegardlessOfSourceColumnH()
     {
         var record = new ReceiptRecord
         {
@@ -207,7 +207,7 @@ public sealed class ReceiptDomainTests
             record,
             new ReceiptAmountFormatter().Format(record.Amount));
 
-        Assert.Equal("承辦人", values["HANDLER"]);
+        Assert.Equal(string.Empty, values["HANDLER"]);
         Assert.Contains(ReceiptTemplateMapping.Fields, field =>
             field.Placeholder == "HANDLER"
             && field.TargetDescription.Contains("經手人", StringComparison.Ordinal));

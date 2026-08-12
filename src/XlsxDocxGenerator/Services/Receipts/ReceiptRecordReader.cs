@@ -77,7 +77,12 @@ public sealed class ReceiptRecordReader
         return ParseRecord(row);
     }
 
-    private async Task<ExcelWorksheetData> ReadWorksheetAsync(
+    /// <summary>
+    /// Reads and validates the fixed worksheet contract without eagerly
+    /// parsing every row. Batch orchestration uses this to keep row failures
+    /// isolated while still failing closed on schema errors.
+    /// </summary>
+    public async Task<ExcelWorksheetData> ReadWorksheetAsync(
         string workbookPath,
         string worksheetName,
         CancellationToken cancellationToken)
@@ -91,7 +96,8 @@ public sealed class ReceiptRecordReader
         return worksheet;
     }
 
-    private ReceiptRecord ParseRecord(ExcelRowData row)
+    /// <summary>Parses exactly one already-read Excel row.</summary>
+    public ReceiptRecord ParseRecord(ExcelRowData row)
     {
         var rocYear = ParsePositiveInteger(row, 1, "年");
         var month = ParsePositiveInteger(row, 2, "月");
@@ -113,6 +119,8 @@ public sealed class ReceiptRecordReader
             Month = month,
             Day = day,
             ReceiptSerial = serial,
+            // Column G is the only receipt reason source. Column H remains
+            // source-only register data and is never mapped into Word.
             Payer = Required(row, 5, "繳款人"),
             Amount = _amountParser.Parse(Required(row, 6, "數字金額"), row.RowNumber),
             Reason = Required(row, 7, "事由"),
@@ -160,7 +168,7 @@ public sealed class ReceiptRecordReader
 
         throw new ReceiptValidationException(
             ReceiptValidationErrorCode.InvalidRecord,
-            $"第 {row.RowNumber} 列缺少{name}資料。");
+            $"第 {row.RowNumber} 列「{name}」不可空白。");
     }
 
     private static string Optional(ExcelRowData row, int column) =>

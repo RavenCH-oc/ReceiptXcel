@@ -8,7 +8,9 @@ public sealed record ReceiptWordFieldMapping(
 
 /// <summary>
 /// The only place where fixed receipt fields are mapped to internal Word
-/// placeholders. In particular, Excel 承辦人 maps to each 聯's 經手人 cell.
+/// placeholders. Excel column G supplies the reason. Excel column H is
+/// source-only compatibility data and never maps to Word, so each 聯's
+/// 經手人 cell remains blank.
 /// </summary>
 public static class ReceiptTemplateMapping
 {
@@ -49,7 +51,8 @@ public static class ReceiptTemplateMapping
             ["RECEIPT_NUMBER"] = record.ReceiptNumber,
             ["PAYER"] = record.Payer,
             ["REASON"] = record.Reason,
-            ["HANDLER"] = record.Handler,
+            // Excel column H is source-only; fixed-form handler cells are blank.
+            ["HANDLER"] = string.Empty,
             ["AMOUNT_1000000"] = amount.MillionCell,
             ["AMOUNT_100000"] = amount.HundredThousandCell,
             ["AMOUNT_10000"] = amount.TenThousandCell,

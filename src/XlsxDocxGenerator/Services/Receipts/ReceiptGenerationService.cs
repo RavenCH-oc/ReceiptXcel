@@ -89,6 +89,36 @@ public sealed class ReceiptGenerationService
         return await GenerateRecordAsync(record, amount, outputPath, cancellationToken);
     }
 
+    /// <summary>
+    /// Generates a validated receipt from an already-parsed record. Batch
+    /// orchestration uses this overload so the Excel workbook is read once
+    /// and row-level validation can continue independently.
+    /// </summary>
+    public Task<string> GenerateReceiptAsync(
+        ReceiptRecord record,
+        string outputPath,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        var amount = _amountFormatter.Format(record.Amount);
+        return GenerateRecordAsync(record, amount, outputPath, cancellationToken);
+    }
+
+    public Task<string> GenerateReceiptToDirectoryAsync(
+        ReceiptRecord record,
+        string outputDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        var outputPath = _filenamePolicy.GetOutputPath(outputDirectory, record);
+        return GenerateReceiptAsync(record, outputPath, cancellationToken);
+    }
+
+    public ReceiptTemplateContract ValidateInternalTemplate() =>
+        _templateValidator.Validate(_internalTemplatePath);
+
+    public string InternalTemplatePath => _internalTemplatePath;
+
     private Task<string> GenerateRecordAsync(
         ReceiptRecord record,
         FormattedReceiptAmount amount,

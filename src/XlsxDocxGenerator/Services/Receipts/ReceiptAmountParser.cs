@@ -59,6 +59,6 @@ public sealed class ReceiptAmountParser
         new(
             ReceiptValidationErrorCode.InvalidAmount,
             excelRowNumber.HasValue
-                ? $"第 {excelRowNumber.Value} 列金額格式錯誤，請輸入不含角分的正整數。"
-                : "金額格式錯誤，請輸入不含角分的正整數。\n可接受：1000、1,000；不接受貨幣符號、負數或小數。");
+                ? $"第 {excelRowNumber.Value} 列「數字金額」格式不正確，請輸入不含角分的正整數。"
+                : "「數字金額」格式不正確，請輸入不含角分的正整數。\n可接受：1000、1,000；不接受貨幣符號、負數或小數。");
 }

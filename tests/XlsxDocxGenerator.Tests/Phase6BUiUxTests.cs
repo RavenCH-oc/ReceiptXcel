@@ -139,22 +139,24 @@ public sealed class Phase6BUiUxTests
         var xaml = File.ReadAllText(xamlPath);
 
         Assert.Contains("PrimaryButtonStyle", xaml);
-        Assert.Contains("SegmentButtonStyle", xaml);
+        Assert.Contains("CardStyle", xaml);
         Assert.Contains("Maximum=\"{Binding ProgressMaximum, Mode=OneWay}\"", xaml);
         Assert.Contains("Value=\"{Binding ProgressValue, Mode=OneWay}\"", xaml);
         Assert.DoesNotContain("Value=\"{Binding ProgressValue}\"", xaml);
     }
 
     [Fact]
-    public void MainWindowXamlContainsBothUserFacingWorkModes()
+    public void MainWindowXamlContainsReceiptSpecificWorkflow()
     {
         var xamlPath = Path.Combine(FindSolutionDirectory(), "src", "XlsxDocxGenerator", "MainWindow.xaml");
         var xaml = File.ReadAllText(xamlPath);
 
-        Assert.Contains("Content=\"產生文件\"", xaml);
-        Assert.Contains("Content=\"建立模板\"", xaml);
-        Assert.Contains("Header=\"進階選項\"", xaml);
-        Assert.DoesNotContain("strict automatic detection", xaml, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Text=\"Excel 收據登記表\"", xaml);
+        Assert.Contains("Text=\"最新筆數\"", xaml);
+        Assert.Contains("Text=\"Excel 列號\"", xaml);
+        Assert.Contains("Content=\"產生收據\"", xaml);
+        Assert.DoesNotContain("建立模板", xaml);
+        Assert.DoesNotContain(".docxcel.json", xaml, StringComparison.OrdinalIgnoreCase);
     }
 
     private static MainWindowViewModel CreateViewModel(string directory) =>

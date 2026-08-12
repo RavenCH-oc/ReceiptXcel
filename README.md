@@ -1,61 +1,76 @@
 # ReceiptXcel
 
-ReceiptXcel 是「自行收納款項統一收據」的固定表單產生工具。它沿用 DocXcel v0.1.0 已驗證的 Windows WPF、ClosedXML 與 Open XML 基礎，但本 repository 有自己的 Git history，產品版本為 `0.1.0-dev`。
+ReceiptXcel｜自行收納款項收據產生工具，是只讀 Excel、產生固定「自行收納款項統一收據」三聯 DOCX 的 Windows WPF 工具。
 
-本 Phase 0 建立固定 Excel schema、收據 record、日期/編號規則、金額解析與三聯 Word 內建模板；正式 specialized UI 與完整生成 workflow 留待後續 Phase。
+一般使用者不需要編輯 Word 模板、設定欄位 mapping、輸入 placeholder 或設定檔名樣式。程式會使用內建固定收據格式，一個 Excel 資料列產生一份包含第一聯、第二聯、第三聯的 Word 文件。
 
-## 第一次使用
+## Excel 格式
 
-1. 準備符合 `工作表1`、Row 2 固定欄位的 Excel。
-2. 使用內建 `src/XlsxDocxGenerator/Assets/Templates/receipt-template.docx`。
-3. 由 specialized receipt workflow 讀取資料列並產生三聯 DOCX（正式 UI 尚未在本 Phase 實作）。
+只接受工作表 `工作表1`，第 2 列必須完全符合以下欄位順序：
 
-## 目前保留的 inherited baseline
+```text
+年 / 月 / 日 / 編號 / 繳款人 / 數字金額 / 事由 / 承辦人
+```
 
-現有通用模板 UI、`.docxcel.json` 與 batch infrastructure 暫時保留，以維持 DocXcel baseline 的 build/test regression；它們不代表 ReceiptXcel 的最終產品流程。
+第 1 列可作為標題，第 3 列起為資料。年、月、日、編號、繳款人、數字金額與事由必須可解析。H「承辦人」欄目前僅為相容既有 Excel 登記表格式而保留，不會輸出到收據；Word 的「經手人」填寫格目前固定留白。
 
-模板設定檔保存模板名稱、Word 路徑、preferred worksheet、欄位 mapping 與輸出檔名樣式，不保存 Excel 資料內容、selection rule 或 batch result。
+## 使用方式
 
-## Runtime marker safety
+1. 啟動 ReceiptXcel。
+2. 按「選擇」載入 `.xlsx` 收據登記表。
+3. 確認工作表與「Excel 格式正確」訊息。
+4. 選擇「最新資料」或「Excel 列號」。
+5. 確認預計產生筆數，選擇輸出資料夾。
+6. 按「產生收據」。
 
-兩個以上欄位 mapping 會使用 strict automatic detection：必須完整匹配所有 mapping placeholder，且其他非 mapping 欄位不可有非空內容。單一 mapping 無法可靠分辨 `{{NAME}}` 是 marker 或真實資料，因此不會自動排除；若目前 Excel 仍保留該列，請在畫面指定「目前 Excel 欄位對應列」。留白代表不排除任何 runtime marker row。此指定值只存在於目前 workbook/session，不會寫入模板 JSON。
+「最新資料」會從最下面的非空白資料列取出指定筆數，再按照 Excel 列號由小到大產生。「Excel 列號」支援單列、逗號清單與範圍，例如 `3`、`3,5,8`、`3-6`、`3,5,8-10`。
 
-建立模板時的 `CreationMappingMarkerRowNumber` 只是來源 Excel metadata，不會永久排除新 Excel 的相同列號。
+## 金額與輸出安全
 
-## 支援的 Word 部位
+- 只允許正整數元，最大值為 `9,999,999`。
+- 程式自動處理固定表單的七格金額欄位與中文財務大寫。
+- 每列固定輸出為 `收據_{收據編號}.docx`。
+- 已存在的檔案不會覆寫，也不會自動加上 `(2)` 等尾碼。
+- 同一批次出現重複收據編號時，整批會在產生前停止。
+- 個別資料列格式錯誤或輸出檔已存在時，該列失敗，其他列仍會繼續。
+- Excel 原檔永遠不會被寫回。
+- 取消批次時，已完成文件保留，未處理列不產生，暫存檔會清理。
 
-支援正文、表格、頁首、頁尾，以及跨 Run/Text node 的 placeholder。頁首與頁尾包含 first/even page parts。
+## 系統需求
 
-目前不支援文字方塊、Shapes、圖片 placeholder、註腳、章節附註、Comments、Content Controls，以及特殊 tracked-changes 結構。
+產生 DOCX 不需要安裝 Microsoft Excel 或 Word；ReceiptXcel 使用 ClosedXML 與 Open XML SDK 讀取／產生檔案。查看與列印產出的 DOCX 需要 Microsoft Word 或相容軟體。
 
-## 批次與取消
+本工具不使用 Office Interop、PDF、LibreOffice、資料庫或網路服務。
 
-產生批次期間可以按「取消」。目前文件會安全完成或清理 temporary file；已完成的 DOCX 保留，尚未處理的資料列不會產生輸出。
+## 設定與 diagnostics
 
-## 本機設定與 diagnostics
-
-低風險使用偏好保存於：
+ReceiptXcel 使用自己的產品資料夾，不會與 DocXcel 共用：
 
 ```text
 %LocalAppData%\ReceiptXcel\settings.json
-```
-
-diagnostics log 保存於：
-
-```text
 %LocalAppData%\ReceiptXcel\Logs\
 ```
 
-設定與 log 都不保存 Excel cell、Word 正文或 batch 業務資料。
+只保存低風險偏好：最後輸出資料夾、最後選擇模式與視窗大小。不會保存 Excel 內容、選取列運算式、收據資料、金額、繳款人、事由或批次結果。diagnostics 可以記錄時間、版本、操作、內部錯誤與例外堆疊，但不會記錄業務欄位或 Word 正文。
 
-## Portable Windows build
+## 建置與測試
 
-Release portable profile：
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+dotnet build -c Release
+dotnet test -c Release
+```
+
+Portable Windows staging publish 使用：
 
 ```text
 src/XlsxDocxGenerator/Properties/PublishProfiles/WinX64Portable.pubxml
 ```
 
-目標為 `win-x64`、self-contained、未啟用 aggressive trimming，輸出至 `artifacts/publish/win-x64/`。本專案不提供 MSI、MSIX 或其他 installer。
+輸出設定為 `win-x64`、self-contained、未啟用 trimming、未 single-file，staging 位置為 `artifacts/publish/win-x64-phase2/`；staging executable 為 `ReceiptXcel.exe`。本專案不提供 installer。
 
-人工驗收項目請參考 [docs/ACCEPTANCE_CHECKLIST.md](docs/ACCEPTANCE_CHECKLIST.md)。
+## 內建固定格式
+
+內建格式位於 `src/XlsxDocxGenerator/Assets/Templates/receipt-template.docx`。Debug、Release 與 publish 都會由專案內容複製到執行檔旁的 `Assets/Templates/`。若檔案遺失或 contract 損壞，產生按鈕會停用並顯示重新安裝訊息；一般使用者不能選擇其他 Word 模板補救。

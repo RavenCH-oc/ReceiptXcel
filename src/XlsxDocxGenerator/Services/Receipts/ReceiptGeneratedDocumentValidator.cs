@@ -116,9 +116,9 @@ public sealed class ReceiptGeneratedDocumentValidator
                 }
 
                 var handlerText = GetCellText(handlerCells[1]);
-                if (!string.Equals(handlerText, record.Handler, StringComparison.Ordinal))
+                if (!string.Equals(handlerText, string.Empty, StringComparison.Ordinal))
                 {
-                    throw InvalidOutput("經手人填寫格與承辦人資料不一致。");
+                    throw InvalidOutput("經手人填寫格必須保持空白。");
                 }
             }
         }

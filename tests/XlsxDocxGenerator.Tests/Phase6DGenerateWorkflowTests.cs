@@ -241,15 +241,12 @@ public sealed class Phase6DGenerateWorkflowTests
     }
 
     [Fact]
-    public void OutputFilenameHelperIsGroupedWithOutputFilenameField()
+    public void ReceiptFilenamePolicyIsFixedAndNotUserEditable()
     {
         var xaml = File.ReadAllText(Path.Combine(FindSolutionDirectory(), "src", "XlsxDocxGenerator", "MainWindow.xaml"));
-        var labelIndex = xaml.IndexOf("Text=\"輸出檔名\"", StringComparison.Ordinal);
-        var helperIndex = xaml.IndexOf("Text=\"可使用 {{ID}}、{{NAME}} 等欄位代號\"", StringComparison.Ordinal);
-
-        Assert.True(labelIndex >= 0);
-        Assert.True(helperIndex > labelIndex);
-        Assert.Contains("FontSize=\"13\"", xaml[helperIndex..(helperIndex + 180)]);
+        Assert.Contains("每筆收據會使用固定檔名", xaml);
+        Assert.DoesNotContain("輸出檔名", xaml);
+        Assert.DoesNotContain("{{ID}}", xaml);
     }
 
     private static async Task PrepareLatestOneAsync(MainWindowViewModel viewModel, string workbookPath)
