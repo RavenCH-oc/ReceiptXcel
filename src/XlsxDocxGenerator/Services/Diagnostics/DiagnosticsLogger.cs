@@ -33,9 +33,11 @@ public sealed class DiagnosticsLogger
                 .AppendLine($"Operation: {operation}")
                 .AppendLine($"InternalErrorCode: {internalErrorCode ?? "(none)"}")
                 .AppendLine($"ExceptionType: {exception.GetType().FullName}")
-                .AppendLine($"Message: {exception.Message}")
                 .AppendLine("StackTrace:")
-                .AppendLine(exception.ToString())
+                // Exception.Message and Exception.ToString() can include Excel
+                // values or generated receipt content. Diagnostics intentionally
+                // retain only the type and call stack for release privacy.
+                .AppendLine(exception.StackTrace ?? "(no stack trace)")
                 .AppendLine(new string('-', 80));
             File.AppendAllText(logPath, builder.ToString(), Utf8NoBom);
         }
