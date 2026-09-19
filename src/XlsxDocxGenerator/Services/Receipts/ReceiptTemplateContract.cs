@@ -38,7 +38,10 @@ public sealed class ReceiptTemplateContractValidator
 
         try
         {
-            using var document = WordprocessingDocument.Open(fullPath, false);
+            // Own the stream even when package construction fails, so a bad
+            // extracted template cannot leave a handle blocking lease cleanup.
+            using var stream = File.OpenRead(fullPath);
+            using var document = WordprocessingDocument.Open(stream, false);
             var mainDocumentPart = document.MainDocumentPart;
             if (mainDocumentPart?.Document.Body is null)
             {
@@ -91,6 +94,7 @@ public sealed class ReceiptTemplateContractValidator
             throw;
         }
         catch (Exception exception) when (exception is IOException
+            or FileFormatException
             or InvalidDataException
             or InvalidOperationException
             or OpenXmlPackageException

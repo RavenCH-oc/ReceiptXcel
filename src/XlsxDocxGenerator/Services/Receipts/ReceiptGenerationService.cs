@@ -19,7 +19,7 @@ public sealed class ReceiptGenerationService
     private readonly ReceiptGeneratedDocumentValidator _generatedValidator;
     private readonly ReceiptFilenamePolicy _filenamePolicy;
     private readonly IPlaceholderResolver _placeholderResolver;
-    private readonly string _internalTemplatePath;
+    private readonly IReceiptTemplateProvider _templateProvider;
 
     public ReceiptGenerationService(
         ReceiptRecordReader? recordReader = null,
@@ -29,7 +29,8 @@ public sealed class ReceiptGenerationService
         ReceiptGeneratedDocumentValidator? generatedValidator = null,
         ReceiptFilenamePolicy? filenamePolicy = null,
         IPlaceholderResolver? placeholderResolver = null,
-        string? internalTemplatePath = null)
+        string? internalTemplatePath = null,
+        IReceiptTemplateProvider? templateProvider = null)
     {
         _recordReader = recordReader ?? new ReceiptRecordReader();
         _amountFormatter = amountFormatter ?? new ReceiptAmountFormatter();
@@ -39,13 +40,13 @@ public sealed class ReceiptGenerationService
             ?? new ReceiptTemplateContractValidator(_placeholderResolver);
         _generatedValidator = generatedValidator ?? new ReceiptGeneratedDocumentValidator();
         _filenamePolicy = filenamePolicy ?? new ReceiptFilenamePolicy();
-        _internalTemplatePath = Path.GetFullPath(
-            internalTemplatePath
-            ?? Path.Combine(
-                AppContext.BaseDirectory,
-                "Assets",
-                "Templates",
-                "receipt-template.docx"));
+        if (internalTemplatePath is not null && templateProvider is not null)
+        {
+            throw new ArgumentException("Specify either a template provider or an explicit template path.");
+        }
+        _templateProvider = templateProvider ?? (internalTemplatePath is null
+            ? new EmbeddedReceiptTemplateProvider()
+            : new FileReceiptTemplateProvider(internalTemplatePath));
     }
 
     /// <summary>
@@ -114,23 +115,56 @@ public sealed class ReceiptGenerationService
         return GenerateReceiptAsync(record, outputPath, cancellationToken);
     }
 
-    public ReceiptTemplateContract ValidateInternalTemplate() =>
-        _templateValidator.Validate(_internalTemplatePath);
+    public ReceiptTemplateContract ValidateInternalTemplate()
+    {
+        using var template = _templateProvider.Acquire();
+        return _templateValidator.Validate(template.TemplatePath);
+    }
 
-    public string InternalTemplatePath => _internalTemplatePath;
+    internal ReceiptTemplateLease AcquireValidatedTemplate(CancellationToken cancellationToken)
+    {
+        var template = _templateProvider.Acquire(cancellationToken);
+        try
+        {
+            _templateValidator.Validate(template.TemplatePath);
+            return template;
+        }
+        catch
+        {
+            template.Dispose();
+            throw;
+        }
+    }
 
-    private Task<string> GenerateRecordAsync(
+    internal Task<string> GenerateReceiptAsync(
+        ReceiptRecord record,
+        string outputPath,
+        ReceiptTemplateLease template,
+        CancellationToken cancellationToken) =>
+        GenerateRecordAsync(record, _amountFormatter.Format(record.Amount),
+            outputPath, cancellationToken, template.TemplatePath);
+
+    private async Task<string> GenerateRecordAsync(
         ReceiptRecord record,
         FormattedReceiptAmount amount,
         string outputPath,
         CancellationToken cancellationToken)
     {
+        using var template = AcquireValidatedTemplate(cancellationToken);
+        return await GenerateRecordAsync(record, amount, outputPath, cancellationToken, template.TemplatePath);
+    }
+
+    private Task<string> GenerateRecordAsync(
+        ReceiptRecord record,
+        FormattedReceiptAmount amount,
+        string outputPath,
+        CancellationToken cancellationToken,
+        string templatePath)
+    {
         cancellationToken.ThrowIfCancellationRequested();
-        var templateContract = _templateValidator.Validate(_internalTemplatePath);
-        _ = templateContract;
 
         var finalPath = GetFullPath(outputPath);
-        if (string.Equals(finalPath, _internalTemplatePath, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(finalPath, templatePath, StringComparison.OrdinalIgnoreCase))
         {
             throw new ReceiptGenerationException(
                 ReceiptGenerationErrorCode.OutputWriteFailed,
@@ -160,7 +194,7 @@ public sealed class ReceiptGenerationService
         {
             Directory.CreateDirectory(outputDirectory);
             cancellationToken.ThrowIfCancellationRequested();
-            File.Copy(_internalTemplatePath, temporaryPath, overwrite: false);
+            File.Copy(templatePath, temporaryPath, overwrite: false);
 
             using (var document = WordprocessingDocument.Open(temporaryPath, true))
             {

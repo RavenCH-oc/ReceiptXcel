@@ -28,8 +28,6 @@ public sealed class ReceiptBatchGenerationService
         _selectionRuleParser = selectionRuleParser ?? new SelectionRuleParser();
     }
 
-    public string InternalTemplatePath => _receiptGenerationService.InternalTemplatePath;
-
     public bool IsInternalTemplateAvailable(out string userMessage)
     {
         try
@@ -163,9 +161,14 @@ public sealed class ReceiptBatchGenerationService
                 preview.Notice ?? "沒有符合條件的資料列。");
         }
 
+        ReceiptTemplateLease template;
         try
         {
-            _receiptGenerationService.ValidateInternalTemplate();
+            template = _receiptGenerationService.AcquireValidatedTemplate(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return Cancelled([], preview.TotalSelected, preview.Notice);
         }
         catch (ReceiptGenerationException exception)
         {
@@ -175,6 +178,8 @@ public sealed class ReceiptBatchGenerationService
                 exception);
         }
 
+        // One lease per batch, including preflight, every row, and all exits.
+        using var templateLease = template;
         var fullOutputDirectory = EnsureOutputDirectory(outputDirectory);
         var results = new List<ReceiptRowGenerationResult>(preview.TotalSelected);
         progress?.Report(new ReceiptBatchProgress(0, preview.TotalSelected, 0));
@@ -205,6 +210,7 @@ public sealed class ReceiptBatchGenerationService
                 var generatedPath = await _receiptGenerationService.GenerateReceiptAsync(
                     record,
                     outputPath,
+                    templateLease,
                     cancellationToken);
                 results.Add(ReceiptRowGenerationResult.Succeeded(record, generatedPath));
             }

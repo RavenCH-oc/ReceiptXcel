@@ -216,13 +216,8 @@ public sealed class ReceiptDomainTests
     [Fact]
     public async Task InternalReceiptTemplateContainsEveryMappedPlaceholder()
     {
-        var templatePath = Path.Combine(
-            AppContext.BaseDirectory,
-            "Assets",
-            "Templates",
-            "receipt-template.docx");
-
-        var placeholders = await new DocxTemplateReader().ScanPlaceholdersAsync(templatePath);
+        using var template = new EmbeddedReceiptTemplateProvider().Acquire();
+        var placeholders = await new DocxTemplateReader().ScanPlaceholdersAsync(template.TemplatePath);
 
         Assert.Equal(
             ReceiptTemplateMapping.Fields

@@ -39,12 +39,12 @@ public sealed class ReceiptPhase3ReleaseTests
         Assert.Contains("<AssemblyName>ReceiptXcel 收據產生工具</AssemblyName>", project);
         Assert.Contains("<Product>ReceiptXcel</Product>", project);
         Assert.Contains("<Title>ReceiptXcel｜自行收納款項收據產生工具</Title>", project);
-        Assert.Contains("<Version>0.1.1</Version>", project);
-        Assert.Contains("<AssemblyVersion>0.1.1.0</AssemblyVersion>", project);
-        Assert.Contains("<FileVersion>0.1.1.0</FileVersion>", project);
-        Assert.Contains("<InformationalVersion>0.1.1</InformationalVersion>", project);
-        Assert.Contains("<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>", project);
-        Assert.Contains("<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>", project);
+        Assert.Contains("<Version>0.1.2</Version>", project);
+        Assert.Contains("<AssemblyVersion>0.1.2.0</AssemblyVersion>", project);
+        Assert.Contains("<FileVersion>0.1.2.0</FileVersion>", project);
+        Assert.Contains("<InformationalVersion>0.1.2</InformationalVersion>", project);
+        Assert.Contains("<EmbeddedResource Include=", project);
+        Assert.Contains(EmbeddedReceiptTemplateProvider.ResourceName, project);
         Assert.Contains("<RuntimeIdentifier>win-x64</RuntimeIdentifier>", profile);
         Assert.Contains("<SelfContained>true</SelfContained>", profile);
         Assert.Contains("<PublishTrimmed>false</PublishTrimmed>", profile);
@@ -53,12 +53,12 @@ public sealed class ReceiptPhase3ReleaseTests
 
         var assembly = typeof(XlsxDocxGenerator.App).Assembly;
         Assert.Equal("ReceiptXcel 收據產生工具", assembly.GetName().Name);
-        Assert.Equal(new Version(0, 1, 1, 0), assembly.GetName().Version);
+        Assert.Equal(new Version(0, 1, 2, 0), assembly.GetName().Version);
         Assert.Equal("ReceiptXcel", assembly.GetCustomAttribute<AssemblyProductAttribute>()!.Product);
         Assert.Equal("ReceiptXcel 收據產生工具.dll", Path.GetFileName(assembly.Location));
         var metadata = FileVersionInfo.GetVersionInfo(assembly.Location);
-        Assert.Equal("0.1.1.0", metadata.FileVersion);
-        Assert.StartsWith("0.1.1", metadata.ProductVersion);
+        Assert.Equal("0.1.2.0", metadata.FileVersion);
+        Assert.StartsWith("0.1.2", metadata.ProductVersion);
     }
 
     [Fact]
@@ -66,11 +66,11 @@ public sealed class ReceiptPhase3ReleaseTests
     {
         var service = new ReceiptGenerationService();
 
-        Assert.Equal(
-            Path.Combine(AppContext.BaseDirectory, "Assets", "Templates", "receipt-template.docx"),
-            service.InternalTemplatePath);
-        Assert.True(File.Exists(service.InternalTemplatePath));
-        Assert.DoesNotContain("reference", service.InternalTemplatePath, StringComparison.OrdinalIgnoreCase);
+        using var template = new EmbeddedReceiptTemplateProvider().Acquire();
+        Assert.StartsWith(Path.Combine(Path.GetTempPath(), "ReceiptXcel"), template.TemplatePath);
+        Assert.True(File.Exists(template.TemplatePath));
+        Assert.DoesNotContain("reference", template.TemplatePath, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(15, service.ValidateInternalTemplate().OccurrenceCounts.Count);
         Assert.True(new ReceiptBatchGenerationService().IsInternalTemplateAvailable(out _));
     }
 
