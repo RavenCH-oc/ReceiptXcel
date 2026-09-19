@@ -69,7 +69,7 @@ Portable Windows staging publish 使用：
 src/XlsxDocxGenerator/Properties/PublishProfiles/WinX64Portable.pubxml
 ```
 
-輸出設定為 `win-x64`、self-contained、未啟用 trimming、未 single-file，staging 位置為 `artifacts/publish/win-x64-phase2/`；staging executable 為 `ReceiptXcel.exe`。本專案不提供 installer。
+輸出設定為 `win-x64`、self-contained、未啟用 trimming、未 single-file，staging 位置為 `artifacts/publish/win-x64-phase2/`；staging executable 為 `ReceiptXcel 收據產生工具.exe`。本專案不提供 installer。
 
 ## 內建固定格式
 

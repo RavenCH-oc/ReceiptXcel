@@ -32,7 +32,7 @@ public sealed class Phase5CStartupWpfTests
                 };
                 Application.LoadComponent(
                     application,
-                    new Uri("/ReceiptXcel;component/App.xaml", UriKind.Relative));
+                    new Uri($"/{typeof(XlsxDocxGenerator.App).Assembly.GetName().Name};component/App.xaml", UriKind.Relative));
                 application.DispatcherUnhandledException += (_, args) =>
                 {
                     failure = args.Exception;
@@ -52,9 +52,14 @@ public sealed class Phase5CStartupWpfTests
                     DispatcherPriority.ApplicationIdle,
                     new Action(() =>
                     {
-                        if (!startupReady)
+                        if (!startupReady || !window.IsLoaded || !window.IsStartupReady)
                         {
                             failure = new InvalidOperationException("MainWindow did not reach Loaded.");
+                        }
+
+                        if (window.Title != "ReceiptXcel｜自行收納款項收據產生工具")
+                        {
+                            failure = new InvalidOperationException("MainWindow title changed after assembly rename.");
                         }
 
                         window.Close();

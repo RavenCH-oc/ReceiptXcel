@@ -7,13 +7,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <Platforms>AnyCPU</Platforms>
-    <AssemblyName>ReceiptXcel</AssemblyName>
+    <AssemblyName>ReceiptXcel 收據產生工具</AssemblyName>
     <Product>ReceiptXcel</Product>
     <Title>ReceiptXcel｜自行收納款項收據產生工具</Title>
-    <Version>0.1.0</Version>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
-    <InformationalVersion>0.1.0</InformationalVersion>
+    <Version>0.1.1</Version>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <FileVersion>0.1.1.0</FileVersion>
+    <InformationalVersion>0.1.1</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

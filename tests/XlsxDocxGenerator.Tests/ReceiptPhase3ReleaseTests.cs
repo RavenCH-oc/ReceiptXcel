@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml;
@@ -34,13 +36,13 @@ public sealed class ReceiptPhase3ReleaseTests
             "PublishProfiles",
             "WinX64Portable.pubxml"));
 
-        Assert.Contains("<AssemblyName>ReceiptXcel</AssemblyName>", project);
+        Assert.Contains("<AssemblyName>ReceiptXcel 收據產生工具</AssemblyName>", project);
         Assert.Contains("<Product>ReceiptXcel</Product>", project);
         Assert.Contains("<Title>ReceiptXcel｜自行收納款項收據產生工具</Title>", project);
-        Assert.Contains("<Version>0.1.0</Version>", project);
-        Assert.Contains("<AssemblyVersion>0.1.0.0</AssemblyVersion>", project);
-        Assert.Contains("<FileVersion>0.1.0.0</FileVersion>", project);
-        Assert.Contains("<InformationalVersion>0.1.0</InformationalVersion>", project);
+        Assert.Contains("<Version>0.1.1</Version>", project);
+        Assert.Contains("<AssemblyVersion>0.1.1.0</AssemblyVersion>", project);
+        Assert.Contains("<FileVersion>0.1.1.0</FileVersion>", project);
+        Assert.Contains("<InformationalVersion>0.1.1</InformationalVersion>", project);
         Assert.Contains("<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>", project);
         Assert.Contains("<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>", project);
         Assert.Contains("<RuntimeIdentifier>win-x64</RuntimeIdentifier>", profile);
@@ -48,6 +50,15 @@ public sealed class ReceiptPhase3ReleaseTests
         Assert.Contains("<PublishTrimmed>false</PublishTrimmed>", profile);
         Assert.Contains("<PublishSingleFile>false</PublishSingleFile>", profile);
         Assert.Contains("win-x64-phase3-rc", profile);
+
+        var assembly = typeof(XlsxDocxGenerator.App).Assembly;
+        Assert.Equal("ReceiptXcel 收據產生工具", assembly.GetName().Name);
+        Assert.Equal(new Version(0, 1, 1, 0), assembly.GetName().Version);
+        Assert.Equal("ReceiptXcel", assembly.GetCustomAttribute<AssemblyProductAttribute>()!.Product);
+        Assert.Equal("ReceiptXcel 收據產生工具.dll", Path.GetFileName(assembly.Location));
+        var metadata = FileVersionInfo.GetVersionInfo(assembly.Location);
+        Assert.Equal("0.1.1.0", metadata.FileVersion);
+        Assert.StartsWith("0.1.1", metadata.ProductVersion);
     }
 
     [Fact]
